@@ -1,0 +1,18 @@
+[
+   {
+     "account": "blocktrades",
+     "amount": 83252.3
+   },
+   {
+     "account": "poloniex",
+     "amount": 60136.0
+   },
+   {
+     "account": "bittrex",
+     "amount": 14367.6
+   },
+   {
+     "account": "openledger",
+     "amount": 1613.7
+   }
+]
