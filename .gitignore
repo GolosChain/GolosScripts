@@ -1,2 +1,13 @@
 step_four_pre_registration_list.json
 ico_summary_processor.py
+blockcypher.json
+ico_list.json
+ico_list_exception.json
+config.json
+accounts_list_ico*
+non_registered_accounts*
+registered_accounts*
+registered_logs*
+registration_logs*
+*.xlsx
+registration_list_ico.json
