@@ -36,7 +36,7 @@ ico_worksheet.write(0, 0, "Account")
 ico_worksheet.write(0, 1, "Account address")
 ico_worksheet.write(0, 2, "Account total transactions")
 ico_worksheet.write(0, 3, "Account amount")
-ico_worksheet.write(0, 4, "Account normalized account")
+ico_worksheet.write(0, 4, "Account normalized amount")
 ico_worksheet.write(0, 5, "Weight")
 ico_worksheet.write(0, 6, "Tokens")
 ico_worksheet.write(0, 7, "Transactions description")
@@ -59,15 +59,15 @@ try:
         response = requests.get("https://chain.so/api/v2/get_address_received/BTC/"+str(account_address))
         if response.status_code == 200:
             content = response.json()
-        if response.status_code == 404 or content['data']['unconfirmed_received_value'] == '0.00000000':
+        if response.status_code == 404 or content['data']['confirmed_received_value'] == '0.00000000':
             print("[!] Processed zero investments account which registered ico address")
             row = cursor.fetchone()
             time.sleep(1)
             continue
         address_details = get_address_full(address=account_address, api_key=api_key)
-        if len(address_details['txs']) == 0:
-            row = cursor.fetchone()
-            continue
+        # if len(address_details['txs']) == 0:
+        #     row = cursor.fetchone()
+        #     continue
         for tx in address_details['txs']:
             if  tx['outputs'][0]['addresses'][0] == '3CWicRKHQqcj1N6fT1pC9J3hUzHw1KyPv3':
                 amount = round(float(from_satoshis(tx['inputs'][0]['output_value'], 'btc')), 4)
