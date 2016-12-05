@@ -11,9 +11,7 @@ creator = config["registory"]
 wif     = config["wif"]
 steem   = Steem(node='ws://127.0.0.1:8090', nobroadcast=False, wif=wif)
 
-transfer_list = json.load(open('./step_three_init_tx_power.json'))
-# transfer_list = json.load(open('./step_five_init_tx_power.json'))
-# transfer_list = json.load(open('./step_six_sharedrop_tx_power.json'
+transfer_list = json.load(open('./sharedrop_balances.json'))
 logs          = []
 
 print("[+] Started golos power transfer operations")
