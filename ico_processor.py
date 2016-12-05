@@ -7,6 +7,8 @@ import time
 import xlsxwriter
 import pytz, datetime
 import traceback, logging
+
+startTime = datetime.datetime.now()
 UTC_TZ = pytz.utc
 
 def check_bonus(received):
@@ -17,7 +19,8 @@ def check_bonus(received):
         datetime.datetime(2016, 11, 18, 11, 0, tzinfo=UTC_TZ) <= received < datetime.datetime(2016, 11, 21, 11, 0, tzinfo=UTC_TZ): 1.15,
         datetime.datetime(2016, 11, 21, 11, 0, tzinfo=UTC_TZ) <= received < datetime.datetime(2016, 11, 24, 11, 0, tzinfo=UTC_TZ): 1.10,
         datetime.datetime(2016, 11, 24, 11, 0, tzinfo=UTC_TZ) <= received < datetime.datetime(2016, 11, 27, 11, 0, tzinfo=UTC_TZ): 1.05,
-        datetime.datetime(2016, 11, 27, 11, 0, tzinfo=UTC_TZ) <= received                                                        : 1.00
+        datetime.datetime(2016, 11, 27, 11, 0, tzinfo=UTC_TZ) <= received < datetime.datetime(2016, 12, 4, 11, 0, tzinfo=UTC_TZ) : 1.00,
+        datetime.datetime(2016, 12, 4, 11, 0, tzinfo=UTC_TZ)  <= received                                                        : 0.00
     }[1.0]
 
 config  = json.load(open('blockcypher.json'))
@@ -25,10 +28,10 @@ api_key = config["api_key"]
 ico_list = {}
 ico_list_exception = {}
 processed_accounts = 0
+total_accounts = 0
 processed_txs = 0
 total_amount = 0.0
 total_normalized_amount = 0.0
-total_token_amount = 27072000.0
 
 ico_workbook = xlsxwriter.Workbook('ico_list.xlsx')
 ico_worksheet = ico_workbook.add_worksheet()
@@ -56,22 +59,18 @@ try:
         account_normalized_amount = 0.0
         account_total_transactions = 0
         txs = []
-        response = requests.get("https://chain.so/api/v2/get_address_received/BTC/"+str(account_address))
-        if response.status_code == 200:
-            content = response.json()
-        if response.status_code == 404 or content['data']['confirmed_received_value'] == '0.00000000':
-            print("[!] Processed zero investments account which registered ico address")
-            row = cursor.fetchone()
-            time.sleep(1)
-            continue
         address_details = get_address_full(address=account_address, api_key=api_key)
-        # if len(address_details['txs']) == 0:
-        #     row = cursor.fetchone()
-        #     continue
+        if len(address_details['txs']) == 0:
+            row = cursor.fetchone()
+            total_accounts += 1
+            if total_accounts % 100 == 0:
+                print("[*] Running {0}, processed {1} accounts".format(datetime.datetime.now() - startTime, total_accounts))
+            time.sleep(0.4)
+            continue
         for tx in address_details['txs']:
             if  tx['outputs'][0]['addresses'][0] == '3CWicRKHQqcj1N6fT1pC9J3hUzHw1KyPv3':
-                amount = round(float(from_satoshis(tx['inputs'][0]['output_value'], 'btc')), 4)
-                normalized_amount = round(float(amount * check_bonus(tx['received'])), 4)
+                amount = round(float(from_satoshis(tx['inputs'][0]['output_value'], 'btc')), 8)
+                normalized_amount = round(float(amount * check_bonus(tx['received'])), 8)
                 current_tx = {
                     "hash": tx['hash'],
                     "amount": amount,
@@ -80,9 +79,9 @@ try:
                 }
                 account_total_transactions += 1
                 account_amount += amount
-                account_amount = round(account_amount, 4)
+                account_amount = round(account_amount, 6)
                 account_normalized_amount += normalized_amount
-                account_normalized_amount = round(account_normalized_amount, 4)
+                account_normalized_amount = round(account_normalized_amount, 6)
                 txs.append(current_tx)
         processed_txs += account_total_transactions
         total_amount += account_amount
@@ -95,6 +94,7 @@ try:
             "normalized_amount": account_normalized_amount
         }
         processed_accounts += 1
+        total_accounts += 1
         print("[{0}] Checked investor @{1}: [tx: {2}, v: {3}, nv: {4}]".format(processed_accounts, account, account_total_transactions, account_amount, account_normalized_amount))
         ico_worksheet.write(processed_accounts, 0, str(account))
         ico_worksheet.write(processed_accounts, 1, str(account_address))
@@ -103,22 +103,14 @@ try:
         ico_worksheet.write(processed_accounts, 4, str(account_normalized_amount))
         ico_worksheet.write(processed_accounts, 7, str(txs))
         row = cursor.fetchone()
-
+        account_amount = 0.0
+        account_normalized_amount = 0.0
         ico_list_exception = ico_list
-        time.sleep(1)
+        if total_accounts % 100 == 0:
+            print("[*] Running {0}, processed {1} accounts".format(datetime.datetime.now() - startTime, total_accounts))
+        time.sleep(0.4)
     print("[+] Finished accounts investments processing")
 
-    processed_accounts = 0
-    print("[-] Started weights processing for investors")
-    for account in ico_list:
-        processed_accounts +=1
-        weight = round(float(ico_list[account]["normalized_amount"])/total_normalized_amount, 12)
-        ico_list[account]["weight"] = weight
-        tokens = round(total_token_amount * weight, 3)
-        ico_list[account]["tokens"] = tokens
-        ico_worksheet.write(processed_accounts, 5, str(weight))
-        ico_worksheet.write(processed_accounts, 6, str(tokens))
-    print("[+] Finished weights processing for investors")
 except KeyboardInterrupt as e:
     print("[!] Raised keyboard interrupt, going to save progress...")
     with open('ico_list_exception.json', 'w') as outfile:
@@ -140,4 +132,5 @@ else:
     print('[*] Total number of transactions: {0}'.format(processed_txs))
 finally:
     ico_workbook.close()
+    print("[*] Completed execution in {0}".format(datetime.datetime.now() - startTime))
     print("[*] Script finished")

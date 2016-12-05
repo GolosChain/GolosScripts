@@ -105,7 +105,7 @@ try:
             print('[-][{1}] Account name: {0} is invalid'.format(account, processed_accounts))
 
             ico_worksheet.write(processed_accounts, 0, str(account))
-            ico_worksheet.write(processed_accounts, 1, str("Not created [unvalid]"))
+            ico_worksheet.write(processed_accounts, 1, str("Not created [invalid]"))
 
             non_registered_list_exception = non_registered_list
             pass
