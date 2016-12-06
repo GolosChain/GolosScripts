@@ -11,7 +11,7 @@ creator = config["registory"]
 wif     = config["wif"]
 steem   = Steem(node='ws://127.0.0.1:8090', nobroadcast=False, wif=wif)
 
-transfer_list = json.load(open('./sharedrop_balances.json'))
+transfer_list = json.load(open('./ico_final.json'))
 logs          = []
 
 print("[+] Started golos power transfer operations")
